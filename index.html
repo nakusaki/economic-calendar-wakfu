@@ -29,55 +29,10 @@
 </head>
 <body>
     <div class="container">
-        <h1>Welcome to My Simple Website</h1>
+        <h1>Welcome to My Simple Website XXX</h1>
         <p>This is a simple website created using HTML and CSS.</p>
         <p>Feel free to modify this page and make it your own!</p>
         <p>For more information on GitHub Pages, check out the <a href="https://pages.github.com/">GitHub Pages documentation</a>.</p>
     </div>
-    
-    <h1>Python to JavaScript Conversion</h1>
-    <pre id="output"></pre>
-
-    <script>
-        // Your Python code converted to JavaScript starts here
-        const axios = require('axios');
-        const moment = require('moment-timezone');
-
-        // Initialize colorama
-        // colorama.init();
-
-        const listNewsConversion = ["Unemployment Claims"];
-
-        // Function to fetch JSON data
-        async function getJSONData(url) {
-            try {
-                const response = await axios.get(url);
-                return response.data;
-            } catch (error) {
-                console.error("Failed to retrieve data from the URL.", error);
-                return null;
-            }
-        }
-
-        // URL of the JSON data
-        const url = "https://nfs.faireconomy.media/ff_calendar_thisweek.json";
-
-        // Get JSON data
-        getJSONData(url)
-            .then(jsonData => {
-                const today = moment();
-
-                if (jsonData) {
-                    // Convert JSON data to DataFrame (not implemented)
-                    // Filtering and processing data (not implemented)
-
-                    // Output to console (for demonstration)
-                    console.log("Filtered data:", jsonData);
-                }
-            })
-            .catch(error => console.error("Error:", error));
-        // Your Python code converted to JavaScript ends here
-    </script>
 </body>
 </html>
-
