@@ -8,25 +8,29 @@ import math
 from colorama import init, Fore, Back, Style
 # https://pypi.org/project/colorama/
 
-# # Using os.name
-# current_os = os.name
-# print("Current OS (os.name):", current_os)
-
-# # Using sys.platform
-# current_os_sys = sys.platform
-# print("Current OS (sys.platform):", current_os_sys)
-
-# Initialize colorama
 init()
-
-# Example usage
-# print(Fore.RED + 'Red text')
-# print(Back.GREEN + 'Green background')
-# print(Style.RESET_ALL + 'Back to default')
 
 list_news_convertion = ["Unemployment Claims"]
 
-def colored_histogram_with_labels(data_wk):
+all_in_one = "USD"
+
+url_api_line = 'https://notify-api.line.me/api/notify'
+access_token = "A8KQc1kByq8Ev5nA11gzwWgpOW9H5DTgX7HeowMCMXR"
+
+def send_line_notify(message, token):
+    headers = {
+        'Authorization': f'Bearer {token}'
+    }
+    data = {
+        'message': message
+    }
+    response = requests.post(url_api_line, headers=headers, data=data)
+    if response.status_code == 200:
+        print('Notification sent successfully.')
+    else:
+        print('Failed to send notification.')
+        
+def colored_histogram_with_labels(data_wk, all_in_one):
     max_value = 5
     min_value = -5
     # print (min_value,0,max_value)
@@ -34,30 +38,34 @@ def colored_histogram_with_labels(data_wk):
     label_line = ''
     wk_report = "%+2s |%-3s|%-3s|%-3s|%-3s|%-3s|%-3s|%-3s"%(("",'Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'))
     print (wk_report)
+    all_in_one = all_in_one + "\n" + wk_report
     print(Style.RESET_ALL + ("---+---+---+---+---+---+---+---"))
+    all_in_one = all_in_one + "\n" + "---+---+---+---+---+---+---+---"
     x = ("","","","","","","")
     for i in range(10, -1, -1):
         new_x = []
         idx = i-5
         new_x.append(idx)
         for min, max in data_wk:
-            #print ("\t\t\t",dk - idx)
             if max - idx >= 0 and max > 0 and max - idx < max:
                 new_x.append("X")
             elif min - idx <= 0 and min < 0 and min - idx > min:
-                # print ("\t\t\t",dk - idx)
                 new_x.append("X")    
             else: new_x.append(" ")
             
-        x = tuple(new_x)
-        #print (x)    
-        if idx == 0: print(Style.RESET_ALL + ("%+2s +---+---+---+---+---+---+--- "%(i-5)))
+        x = tuple(new_x)   
+        if idx == 0: 
+            print(Style.RESET_ALL + ("%+2s +---+---+---+---+---+---+--- "%(i-5)))
+            all_in_one = all_in_one + "\n" + "%+2s +---+---+---+---+---+---+--- "%(i-5)
         else:
             fnt_color = Style.RESET_ALL
             if idx > 0: fnt_color = Fore.GREEN
             elif idx < 0: fnt_color = Fore.RED
             print(fnt_color + ("%+2s . %-2s. %-2s. %-2s. %-2s. %-2s. %-2s. %-2s"%(x)))
-
+            all_in_one = all_in_one + "\n" + "%+2s . %-2s. %-2s. %-2s. %-2s. %-2s. %-2s. %-2s"%(x)
+    print(Style.RESET_ALL + (""))
+    return all_in_one
+    
 def get_json_data(url):
     response = requests.get(url)
     if response.status_code == 200:
@@ -73,6 +81,7 @@ url = "https://nfs.faireconomy.media/ff_calendar_thisweek.json"
 # Get JSON data
 json_data = get_json_data(url)
 today = datetime.now()
+# send_line_notify("test", access_token)
 
 if json_data:
     # Convert JSON data to DataFrame
@@ -152,16 +161,19 @@ if json_data:
             print("Fail @line: " + str(exc_tb.tb_lineno) + " w/ " + str(exc_obj) + " ... ")
         
         fnt_color = Style.RESET_ALL
+        day_name = row['date_only'].strftime("%A")
+        sum_wk_7day_crazy.append((day_name, row['title'], row['impact'], percent * impact_level))
         if row['date_only'] >= today.date():
             # USD      2024-02-27 20:30:00   High
             # -----------------------------------
-            day_name = row['date_only'].strftime("%A")
+            
             if row['date_only'] != previous_date_only: 
                 print ("")
+                all_in_one = all_in_one + "\n"
                 #x_datetime = datetime.strptime(row['date_only'], "%Y-%m-%d %H:%M:%S")
                 
                 print ("------ %-10s %-5s ------"%(day_name, str(row['date'])[:10]))
-                
+                all_in_one = all_in_one + "\n" + "------ %-10s %-5s ------"%(day_name, str(row['date'])[:10])
                 previous_date_only = row['date_only']
             else:
                 if trend_suggest_weeks and row['date_only'] == today.date(): 
@@ -177,11 +189,18 @@ if json_data:
                 if row['impact'] == "High":
                     if fnt_color == Style.RESET_ALL: fnt_color = Fore.CYAN
                     fnt_color =  fnt_color + Style.BRIGHT
-                sum_wk_7day_crazy.append((day_name, row['title'], row['impact'], percent * impact_level))
+                
             print(fnt_color + ("%-5s %-1s %+7s %-1s %-7s %+5s %-3s" %(str(row['date'])[11:16], row['impact'][:1], row['forecast'],dxy_view, row['previous'], str(format(trend_forecast, '.2f')), gold_view)))
+            all_in_one = all_in_one + "\n" + "%-5s %-1s %+7s %-1s %-7s %+5s %-3s" %(str(row['date'])[11:16], row['impact'][:1], row['forecast'],dxy_view, row['previous'], str(format(trend_forecast, '.2f')), gold_view)
             previous_date_only = row['date_only']
     print ("")
+    all_in_one = all_in_one + "\n"
+    
+    send_line_notify(all_in_one, access_token)
+    
+    all_in_one = "USD"
     print (Style.RESET_ALL + "------------ SUMMARY --------------")
+    all_in_one = all_in_one + "\n" + "------------ SUMMARY --------------"
     # print (trend_suggest_today)
     # print (trend_suggest_weeks)
     
@@ -191,38 +210,68 @@ if json_data:
     
     if (total_today > 0): 
         print (Fore.RED + ("PREDICT TODAY GOLD -> DOWN (%s)"%str(format(total_today, '.2f'))))
+        all_in_one = all_in_one + "\n" + "PREDICT TODAY GOLD -> DOWN (%s)"%str(format(total_today, '.2f'))
     elif (total_today < 0): 
         print (Fore.GREEN + ("PREDICT TODAY GOLD -> UP (%s)"%str(format(total_today, '.2f'))))
+        all_in_one = all_in_one + "\n" + "PREDICT TODAY GOLD -> UP (%s)"%str(format(total_today, '.2f'))
     else: 
         print (Style.RESET_ALL + ("PREDICT TODAY GOLD -> UNKNOW (%s)"%str(format(total_today, '.2f'))))
-    
+        all_in_one = all_in_one + "\n" + "PREDICT TODAY GOLD -> UNKNOW (%s)"%str(format(total_today, '.2f'))
     total_wk = sum(trend_suggest_weeks)
     # print (total_wk)
     if (total_wk >  0): 
         print (Fore.RED +("PREDICT WEEKS GOLD -> DOWN (%s)"%str(format(total_wk, '.2f'))))
+        all_in_one = all_in_one + "\n" + "PREDICT WEEKS GOLD -> DOWN (%s)"%str(format(total_wk, '.2f'))
     elif (total_wk <  0): 
         print (Fore.GREEN + ("PREDICT WEEKS GOLD -> UP (%s)"%str(format(total_wk, '.2f'))))
+        all_in_one = all_in_one + "\n" + "PREDICT WEEKS GOLD -> UP (%s)"%str(format(total_wk, '.2f'))
     else: 
         print (Style.RESET_ALL + ("PREDICT WEEKS GOLD -> UNKNOW (%s)"%str(format(total_wk, '.2f'))))
+        all_in_one = all_in_one + "\n" + "PREDICT WEEKS GOLD -> UNKNOW (%s)"%str(format(total_wk, '.2f'))
     print (Style.RESET_ALL + "-----------------------------------")
+    all_in_one = all_in_one + "\n" + "-----------------------------------"
     
+    print (Style.RESET_ALL + "")
     # print (trend_suggest_weeks)
-
+    send_line_notify(all_in_one, access_token)
+    all_in_one = "USD"
     #print (sum_wk_7day_crazy)
     days_on_week = ['Sunday','Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday']
     new_days_on_week = []
+    previous_day = None
+    
+    str_today = today.strftime("%A")
+    Letgo = False
+    
     for day in days_on_week:
-        print (day)
         data_report = []
         min, max= 0,0
+        
         for each_day_crazy in sum_wk_7day_crazy:
             dayname, title, impact, percentage = each_day_crazy
+            
             if day == dayname:
+                
                 if percentage < 0: min = min + percentage
                 if percentage > 0: max = max + percentage
-                print ("  ", impact[:1], str(format(percentage, '.2f'))+"%", title)
-                data_report.append(percentage)
                 
+                if str_today == day or Letgo:
+                    if previous_day != day:
+                        print (day)
+                        previous_day = day
+                        all_in_one = all_in_one + "\n" + day
+                    fnt_color = Style.RESET_ALL
+                    if impact[:1] == "H":    
+                        fnt_color = Fore.RED
+                    elif impact[:1] == "M":    
+                        fnt_color = Fore.YELLOW
+                        
+                    print (fnt_color + "  %s %s %s"%(impact[:1], title, str(format(percentage, '.2f'))+"%"))
+                    all_in_one = all_in_one + "\n" + "  %s %s (%s)"%(impact[:1], title, str(format(percentage, '.2f'))+"%")
+                    Letgo = True
+                    
+                data_report.append(percentage)
+        if Letgo : print (Style.RESET_ALL + "")        
         # if sum(data_report) > 1 and sum(data_report)
         if sum(data_report) != 0:
             # print (min, max)
@@ -239,7 +288,14 @@ if json_data:
         #     print(0,0)
         new_days_on_week.append((max*-1, min*-1))
        # print (day,new_days_on_week[-1])
+
         #print ("")
+    send_line_notify(all_in_one, access_token)
+    all_in_one = "USD"
     
-    colored_histogram_with_labels(new_days_on_week)  
-        
+    all_in_one = colored_histogram_with_labels(new_days_on_week, all_in_one)  
+    send_line_notify(all_in_one, access_token)
+    all_in_one = "USD"
+    
+# send_line_notify(all_in_one, access_token)
+# print (all_in_one)
